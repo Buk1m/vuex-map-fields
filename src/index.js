@@ -60,7 +60,7 @@ export const mapFields = normalizeNamespace(
   }
 );
 
-export const mapFieldsDynmically = (
+export const mapFieldsDynamically = (
   namespace,
   fields,
   getterType,
@@ -72,20 +72,28 @@ export const mapFieldsDynmically = (
     const path = fieldsObject[key];
     const field = {
       get() {
-        return normalizeNamespace(
-          (namespace, fields, getterType, mutationType) => {
-            this.$store.getters[getterType](path);
-          }
-        );
+        let moduleName = namespace.bind(this)();
+        if (
+          moduleName.length &&
+          moduleName.charAt(moduleName.length - 1) !== `/`
+        ) {
+          moduleName += `/`;
+        }
+
+        const getterName = `${moduleName}${getterType || `getField`}`;
+        return this.$store.getters[getterName](path);
       },
       set(value) {
-        const { mutationType } = normalizeNamespace(
-          namespace,
-          fields,
-          getterType,
-          mutationType
-        );
-        this.$store.commit(mutationType, { path, value });
+        let moduleName = namespace.bind(this)();
+        if (
+          moduleName.length &&
+          moduleName.charAt(moduleName.length - 1) !== `/`
+        ) {
+          moduleName += `/`;
+        }
+
+        const mutationName = `${moduleName}${mutationType || `updateField`}`;
+        this.$store.commit(mutationName, { path, value });
       },
     };
 
